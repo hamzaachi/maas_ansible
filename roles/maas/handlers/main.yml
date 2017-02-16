@@ -1,0 +1,10 @@
+---
+- name: Restart maas-regiond
+  service:
+    name: maas-regiond
+    state: restarted
+
+- name: Restart maas-rackd
+  service:
+    name: maas-rackd
+    state: restarted

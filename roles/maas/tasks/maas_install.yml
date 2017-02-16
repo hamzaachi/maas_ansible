@@ -1,0 +1,28 @@
+---
+- name: ensure maas pre-packages are installed
+  apt:
+    pkg: "{{ item }}"
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_timeout }}"
+  with_items: "{{ maas_pre_packages }}"
+  register: maas_pkg
+  until: maas_pkg|success
+  retries: 5
+  delay: 2
+  tags:
+   - maas_pre_pkg
+
+- name: ensure maas packages are installed
+  apt:
+    pkg: "{{ item }}"
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_timeout }}"
+  with_items: "{{ maas_packages }}"
+  register: maas_pkg
+  until: maas_pkg|success
+  retries: 5
+  delay: 2
+  tags:
+   - maas_pkg

@@ -1,0 +1,96 @@
+---
+- name: Add the kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items: "{{ maas_net_modules }}"
+  tags:
+    - maas_net_modules
+    - maas_interfaces
+
+- name: ensure the required networking packages are installed
+  apt:
+    pkg: "{{ item }}"
+    state: present
+    update_cache: yes
+    cache_valid_time: "{{ apt_cache_timeout }}"
+  with_items: "{{ maas_network_packages }}"
+  register: net_pkg
+  until: net_pkg|success
+  retries: 5
+  delay: 2
+  tags:
+   - maas_net_pkg
+   - maas_interfaces
+
+- name: Ensure /etc/network/interfaces.d/ exists
+  file:
+    path: /etc/network/interfaces.d/
+    state: directory
+  tags:
+    - networking-dir-create
+    - maas_interfaces
+
+- name: drop maas vlans interfaces
+  template:
+    src: maas_vlans.cfg.j2
+    dest: "/etc/network/interfaces.d/maas_vlans.cfg"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  register: maas_vlans
+  tags:
+    - maas_vlans
+    - maas_interfaces
+
+- name: Drop maas bridges configuration
+  template:
+    src: maas_bridges.cfg.j2
+    dest: "/etc/network/interfaces.d/maas_bridges.cfg"
+    owner: "root"
+    group: "root"
+    mode: "0755"
+  register: maas_bridges
+  tags:
+    - maas_bridges
+    - maas_interfaces
+
+- name: Ensure interfaces.d files are loaded
+  lineinfile:
+    dest: /etc/network/interfaces
+    line: "source /etc/network/interfaces.d/*.cfg"
+  tags:
+    - maas-interfaces-load
+    - maas_interfaces
+
+- name: Shut down maas vlans
+  command: "ifdown {{ item.value.parent }}.{{ item.value.vlan_id }}"
+  with_dict: "{{ maas_vlan_interfaces }}"
+  when: maas_vlans | changed
+  tags:
+    - maas_vlans_stop
+    - maas_interfaces
+
+- name: Start maas vlans
+  command: "ifup {{ item.value.parent }}.{{ item.value.vlan_id }}"
+  with_dict: "{{ maas_vlan_interfaces }}"
+  when: maas_vlans | changed
+  tags:
+    - maas_vlans_start
+    - maas_interfaces
+
+- name: Shut down maas bridges
+  command: "ifdown {{ item.value.bridge_ports }}"
+  with_dict: "{{ maas_bridge_interfaces }}"
+  when: maas_bridges | changed
+  tags:
+    - maas_bridges_stop
+    - maas_interfaces
+
+- name: Start maas bridges
+  command: "ifup {{ item.value.bridge_ports }}"
+  with_dict: "{{ maas_bridge_interfaces }}"
+  when: maas_bridges | changed
+  tags:
+    - maas_bridges_start
+    - maas_interfaces

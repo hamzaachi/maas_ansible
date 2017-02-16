@@ -1,0 +1,15 @@
+{% if maas_vlan_interfaces is defined %}
+{%- for vlan_id, details in maas_vlan_interfaces.iteritems() | sort -%}
+auto {{ details['parent'] }}.{{ vlan_id }}
+iface {{ details['parent'] }}.{{ vlan_id }} inet {{ details['mode'] | default('manual') }}
+      {% if details['mode'] == 'static' %}
+      address {{ details['address'] }}
+      {% endif %}
+      {%- if details['dns-nameservers'] is defined %}
+      dns-nameservers {{ details['dns-nameservers'] }}
+      {% endif -%}
+      vlan-raw-device {{ details['parent'] }}
+      vlan_id {{ vlan_id }}
+
+{% endfor %}
+{% endif %}

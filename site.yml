@@ -1,0 +1,8 @@
+---
+- name: aplly MAAS role
+  hosts: maas
+  gather_facts: "{{ gather_facts | default(True) }}"
+  user: root
+  roles: 
+    - {role: maas, tags: maas, when: enable_maas | bool}
+

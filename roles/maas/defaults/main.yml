@@ -1,0 +1,88 @@
+---
+maas_system_user_name: maas
+maas_system_group_name: maas
+maas_system_shell: /bin/bash
+maas_system_comment: maas system user
+maas_system_log_folder: "/var/log/{{ maas_system_user_name }}"
+maas_system_home_folder: "/var/lib/{{ maas_system_user_name }}"
+
+maas_stable_repo_name:
+  repo: ppa:maas/stable
+  state: present
+##############
+maas_net_modules:
+  - bonding
+  - 8021q
+
+maas_network_packages:
+  - vlan
+  - ifenslave
+  - bridge-utils
+  - tcpdump
+
+# This private and public interfaces will not be populated into /etc/network/interfaces, they are just used to configure of services
+# But they can also be populated into /etc/network/interfaces based on the other networking template in the templates folder
+maas_network_interfaces:
+  private:
+    name: eno1
+    mode: static
+    address: 172.16.1.1/24
+    dns-nameservers: 172.16.1.1
+    dns-search: maas
+  public:
+    name: enp1s1
+    mode: static
+    address: 10.1.200.25/16
+    gateway: 10.1.0.1
+    dns-nameservers: 10.1.5.3
+
+#TODO: Intergrate the 2 type of networks into one dictionary 
+maas_vlan_interfaces:
+  10:
+    name: mgmt
+    vlan_id: 10
+    mode: manual
+    parent: "{{ maas_network_interfaces['public'].name }}"
+  20:
+    name: storage
+    vlan_id: 20
+    mode: manual
+    parent: "{{ maas_network_interfaces['public'].name }}"
+
+maas_bridge_interfaces:
+  br-mgmt:
+    mode: static
+    address: 172.29.236.1/24
+    bridge_ports: "{{ maas_vlan_interfaces[10].parent }}.{{ maas_vlan_interfaces[10].vlan_id }}"
+  br-storage:
+    mode: static
+    address: 172.29.244.1/24
+    bridge_ports: "{{ maas_vlan_interfaces[20].parent }}.{{ maas_vlan_interfaces[20].vlan_id }}"
+
+##########
+maas_pre_packages:
+  - aptitude
+  - build-essential
+  - git
+  - ntp
+  - ntpdate
+  - openssh-server
+  - python-dev
+  - sudo
+  - jq
+  - bc
+  - prips
+
+maas_packages:
+  - maas
+
+maas_listening_ip: "{{ maas_network_interfaces['private'].address.split('/')[0] }}"
+maas_login_cmd: "maas login {{ maas_user_ui }} http://{{ maas_listening_ip }}:5240/MAAS"
+
+maas_settings:
+ - { name: upstream_dns, value: 10.1.5.3 }
+ - { name: ntp_servers, value: 172.16.1.1 }
+ - { name: default_storage_layout, value: lvm }
+ - { name: network_discovery, value: disabled }
+ - { name: active_discovery_interval, value: 0 }
+

@@ -1,0 +1,2 @@
+[maas]
+localhost       ansible_connection=local

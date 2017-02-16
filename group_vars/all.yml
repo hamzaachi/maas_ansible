@@ -1,0 +1,8 @@
+---
+enable_maas: True
+maas_ha_mode: "{{ (groups['maas'] is defined) and (groups['maas'] | length >= 2) }}"
+enable_haproxy: "{{ maas_ha_mode }}"
+
+maas_password_ui: ubuntu
+maas_user_ui: maasadmin
+apt_cache_timeout: 600

@@ -1,0 +1,10 @@
+---
+- include: maas_net_interfaces.yml
+
+- include: internet_getway_setup.yml
+
+- include: maas_pre_install.yml
+
+- include: maas_install.yml
+
+- include: maas_post_install.yml

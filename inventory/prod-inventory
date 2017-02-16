@@ -1,0 +1,5 @@
+[maas]
+maas01
+
+[haproxy]
+maas01

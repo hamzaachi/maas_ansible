@@ -1,0 +1,65 @@
+---
+- name: Create maas system group
+  group:
+    name: "{{ maas_system_group_name }}"
+    state: present
+    system: yes
+  register: create_maas_group
+  until: create_maas_group|success
+  retries: 5
+  delay: 2
+  tags:
+    - maas-group
+
+- name: Create maas system user
+  user:
+    name: "{{ maas_system_user_name }}"
+    group: "{{ maas_system_group_name }}"
+    groups: sudo
+    state: present
+    shell: "{{ maas_system_shell }}"
+    system: "yes"
+    createhome: "yes"
+    home: "{{ maas_system_home_folder }}"
+  register: create_maas_user
+  until: create_maas_user|success
+  retries: 5
+  delay: 2
+  tags:
+    - maas-user
+
+- name: Create maas log folder
+  file:
+    path: "{{ maas_system_log_folder }}"
+    owner: "{{ maas_system_user_name }}"
+    group: "{{ maas_system_group_name }}"
+    state: directory
+    mode: 0755
+  register: create_maas_log
+  until: create_maas_log|success
+  retries: 5
+  delay: 2
+  tags:
+    - maas-log
+
+- name: add maas stable repository
+  apt_repository:
+    repo: "{{ maas_stable_repo_name.repo }}"
+    update_cache: True
+    state: "{{ maas_stable_repo_name.state }}"
+  register: add_repos
+  until: add_repos|success
+  retries: 5
+  delay: 2
+  tags:
+    - maas-repo
+
+- name: Set the locale settings
+  lineinfile:
+    dest: /etc/default/locale
+    line: 'LC_ALL="C"'
+    insertbefore: EOF
+    state: present
+  tags:
+    - lc-all
+    

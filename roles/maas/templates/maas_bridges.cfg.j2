@@ -1,0 +1,20 @@
+{% if maas_bridge_interfaces is defined %}
+{%- for bridge, details in maas_bridge_interfaces.iteritems() | sort -%}
+auto {{ bridge }}
+iface {{ bridge }} inet {{ details['mode'] | default('static') }}
+      {% if details['mode'] == 'static' -%}
+      address {{ details['address'] }}
+      {% endif %}
+      {%- if details['dns-nameservers'] is defined -%}
+      dns-nameservers {{ details['dns-nameservers'] }}
+      {% endif %}
+      {%- if details['dns-search'] is defined -%}
+      dns-search  {{ details['dns-search'] }}
+      {% endif -%}
+      bridge_stp off
+      bridge_waitport 0
+      bridge_fd 0
+      bridge_ports {{ details['bridge_ports'] }}
+
+{% endfor %}
+{% endif %}
